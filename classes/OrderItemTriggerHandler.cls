@@ -11,8 +11,15 @@ public with sharing class OrderItemTriggerHandler {
         this.oldMap = oldMap;
         this.newMap = newMap;
     }
-    
-    public void beforeInsert() {        
+
+    public void beforeUpdate() {
+        OrderItemHelper.calcFreight(this.newRecords);
+    }
+
+    public void afterUpdate() {
         OrderItemHelper.calcFreight(this.oldRecords);
+    }
+    public void beforeInsert() {
+        OrderItemHelper.calcFreight(this.newRecords);
     }
 }

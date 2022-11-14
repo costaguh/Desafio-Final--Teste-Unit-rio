@@ -26,8 +26,16 @@ trigger OrderItemTrigger on OrderItem (before insert, after insert, before updat
         Trigger.old, Trigger.new, Trigger.oldMap, Trigger.newMap
     );
     switch on Trigger.operationType {
+        
+        when BEFORE_UPDATE {
+            handler.beforeUpdate();
+        }
+        when AFTER_UPDATE {
+            handler.afterUpdate();
+        }
         when BEFORE_INSERT {
             handler.beforeInsert();
         }
     }
 }
+
