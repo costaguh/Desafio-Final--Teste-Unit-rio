@@ -30,7 +30,6 @@ public with sharing class OrderHelper {
                         System.debug(order.id + ' ' + orderItem.OrderId);
                         if(order.Freight__c == freight.Id){
                             System.debug(freight.FreightByWeight__c + ' ' + orderItem.Weight__c); 
-                            freight.FreightByWeight__c += freight.FreightByWeight__c;                           
                             order.totalFreight__c = orderItem.Weight__c * freight.FreightByWeight__c ;
                         }  
                     }
