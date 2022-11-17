@@ -2,16 +2,16 @@ public with sharing class OrderHelper {
     public OrderHelper() {}
 
     public static void totalFreight(List<Order> orderList) {
+        Decimal orderQuantityAccumulator = 0;
+        Decimal orderWeightAccumulator = 0;
+        Decimal orderVolumeAccumulator = 0;
 
-        Set<Id> orderIdSet = new Set<Id>();
-
-        Map<Id, Order> freighOrdertMap = new map <Id, Order>([
-            SELECT Id, Freight__c, TotalFreight__c, Description, Pricebook2Id
-            FROM Order
-        ]);        
+        Decimal freightBaseAccumulator = 0;
+        Decimal freightByWeightAccumulator = 0;
+        Decimal freightByVolumeAccumulator = 0;
 
         Map<Id, Freight__c> freightMap = new map <Id, Freight__c> ([
-            SELECT Id, FreightByWeight__c, FreightByVolume__c, FreightBase__c, CEP__c, Name
+            SELECT Id, FreightByWeight__c, FreightByVolume__c, FreightBase__c, CEP__c, Name, City__c, State__c
             FROM Freight__c
         ]);
 
@@ -20,35 +20,73 @@ public with sharing class OrderHelper {
             FROM OrderItem
         ]);
 
-        Decimal countOrderItem;
-        Decimal countFreight;
-
         for(Order order: orderList) {            
             for(Freight__c freight : freightMap.values()) {
                 for(OrderItem orderItem : orderItemMap.values()) {
                     if(order.id == orderItem.OrderId){
-                        System.debug(order.id + ' ' + orderItem.OrderId);
                         if(order.Freight__c == freight.Id){
-                            System.debug(freight.FreightByWeight__c + ' ' + orderItem.Weight__c); 
-                            order.totalFreight__c = orderItem.Weight__c * freight.FreightByWeight__c ;
-                        }  
+                            cepComparation(freight.CEP__c, freight.City__c, freight.Name, 
+                            order.Freight__c, freight.State__c, order.DistributionCenter__c);
+
+                            orderQuantityAccumulator += orderItem.Quantity;
+                            freightBaseAccumulator = freight.FreightBase__c;
+
+                            orderWeightAccumulator += orderItem.Weight__c;
+                            freightByWeightAccumulator = freight.FreightByWeight__c;
+                            
+                            orderVolumeAccumulator += orderItem.Volume__c;
+                            freightByVolumeAccumulator = freight.FreightByVolume__c;
+                        }
                     }
-                }
-                
-                cepComparation(freight.CEP__c, freight.Name, order.Freight__c);
+                }           
             }
+        }
+
+        orderQuantityAccumulator *= freightBaseAccumulator;
+        orderWeightAccumulator *= freightByWeightAccumulator;
+        orderVolumeAccumulator *= freightByVolumeAccumulator;
+
+
+        if(orderQuantityAccumulator >= orderWeightAccumulator && orderQuantityAccumulator >= orderVolumeAccumulator) {
+            System.debug(orderQuantityAccumulator);
+        }                            
+        
+        else if(orderWeightAccumulator >= orderQuantityAccumulator && orderWeightAccumulator >= orderVolumeAccumulator) {
+            System.debug(orderWeightAccumulator);
+        } 
+        
+        else {
+            System.debug(orderVolumeAccumulator);
         }
     }
 
-    public static void cepComparation(String Cep, String Name, String Freight) {
+    public static void cepComparation(String Cep, String City, String freightName, 
+        String Freight, String freightState, String orderDistributionCenter) {
+
         Map<Id, Account> accountMap = new Map<Id, Account>([
             SELECT City__c, CEP__c, Code__c
             FROM Account
         ]);
+        
+        Map <Id, DistributionCenter__c> distCenterMap = new Map<Id, DistributionCenter__c> ([
+            SELECT State__c
+            FROM DistributionCenter__c
+        ]);
 
         for(Account account : accountMap.values()) {
-            if(account.CEP__c != null && CEP == account.CEP__c) {                
-                Freight = Name;
+            for(DistributionCenter__c distributionCenter : distCenterMap.values()){
+                if(account.CEP__c != null && CEP == account.CEP__c) {
+                    Freight = freightName;
+                } 
+                else if(account.City__c != null && account.City__c == City) {
+                    Freight = freightName;
+                } 
+                else if(!String.isBlank(orderDistributionCenter)) {
+                    System.debug('State' + ' ' +DistributionCenter.State__c);
+                    if(distributionCenter.State__c != null && distributionCenter.State__c == freightState) {
+                        Freight = freightName;
+                    }
+                }
             }
         }
     }
