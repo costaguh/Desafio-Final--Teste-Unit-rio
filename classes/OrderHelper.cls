@@ -26,29 +26,26 @@ public with sharing class OrderHelper {
                 order.Freight__c, freight.State__c, order.DistributionCenter__c);
 
                 for(OrderItem orderItem : orderItemMap.values()) {
-                    if(order.Freight__c == freight.Id){                       
+                    orderQuantityAccumulator += orderItem.Quantity;
+                    freightBaseAccumulator = orderQuantityAccumulator * freight.FreightBase__c;
 
-                        orderQuantityAccumulator += orderItem.Quantity;
-                        freightBaseAccumulator = orderQuantityAccumulator * freight.FreightBase__c;
+                    orderWeightAccumulator += orderItem.Weight__c;
+                    freightByWeightAccumulator = orderWeightAccumulator * freight.FreightByWeight__c;
+                    
+                    orderVolumeAccumulator += orderItem.Volume__c;
+                    freightByVolumeAccumulator = freight.FreightByVolume__c;
 
-                        orderWeightAccumulator += orderItem.Weight__c;
-                        freightByWeightAccumulator = orderWeightAccumulator * freight.FreightByWeight__c;
+                    if(freightBaseAccumulator >= freightByWeightAccumulator && freightBaseAccumulator >= freightByVolumeAccumulator) {
+                        order.totalFreight__c = freightBaseAccumulator;
+                    }                            
                     
-                        orderVolumeAccumulator += orderItem.Volume__c;
-                        freightByVolumeAccumulator = freight.FreightByVolume__c;
-
-                        if(freightBaseAccumulator >= freightByWeightAccumulator && freightBaseAccumulator >= freightByVolumeAccumulator) {
-                            order.totalFreight__c = freightBaseAccumulator;
-                        }                            
+                    else if(freightByWeightAccumulator >= freightBaseAccumulator && freightByWeightAccumulator >= freightByVolumeAccumulator) {
+                        order.totalFreight__c = freightByWeightAccumulator;
+                    } 
                     
-                        else if(freightByWeightAccumulator >= freightBaseAccumulator && freightByWeightAccumulator >= freightByVolumeAccumulator) {
-                            order.totalFreight__c = freightByWeightAccumulator;
-                        } 
-                    
-                        else {
-                            order.totalFreight__c = freightByVolumeAccumulator;
-                        }
-                    }    
+                    else {
+                        order.totalFreight__c = freightByVolumeAccumulator;
+                    }
                 }
             }
         }
