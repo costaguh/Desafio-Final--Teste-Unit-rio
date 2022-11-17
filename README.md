@@ -3,7 +3,7 @@
 
 # Vídeo explicando o problema:
 
-[![Video](https://user-images.githubusercontent.com/32878844/201673996-1875d75b-8eed-463a-8fd4-e1c63bad39d8.jpg)](https://streamable.com/391qid)
+[![Video](https://user-images.githubusercontent.com/32878844/201673996-1875d75b-8eed-463a-8fd4-e1c63bad39d8.jpg)](https://streamable.com/21xrj4)
 
 # Cálculo de Frete
 
