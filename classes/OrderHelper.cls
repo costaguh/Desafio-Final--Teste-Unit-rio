@@ -29,35 +29,31 @@ public with sharing class OrderHelper {
                             order.Freight__c, freight.State__c, order.DistributionCenter__c);
 
                             orderQuantityAccumulator += orderItem.Quantity;
-                            freightBaseAccumulator = freight.FreightBase__c;
+                            freightBaseAccumulator = orderQuantityAccumulator * freight.FreightBase__c;
 
                             orderWeightAccumulator += orderItem.Weight__c;
-                            freightByWeightAccumulator = freight.FreightByWeight__c;
+                            freightByWeightAccumulator = orderWeightAccumulator * freight.FreightByWeight__c;
+                            System.debug(freightByWeightAccumulator);
                             
                             orderVolumeAccumulator += orderItem.Volume__c;
                             freightByVolumeAccumulator = freight.FreightByVolume__c;
+
+                            if(freightBaseAccumulator >= freightByWeightAccumulator && freightBaseAccumulator >= freightByVolumeAccumulator) {
+                                System.debug(freightBaseAccumulator);
+                            }                            
+                            
+                            else if(freightByWeightAccumulator >= freightBaseAccumulator && freightByWeightAccumulator >= freightByVolumeAccumulator) {
+                                System.debug(freightByWeightAccumulator);
+                            } 
+                            
+                            else {
+                                System.debug(freightByVolumeAccumulator);
+                            }
                         }
                     }
                 }           
             }
-        }
-
-        orderQuantityAccumulator *= freightBaseAccumulator;
-        orderWeightAccumulator *= freightByWeightAccumulator;
-        orderVolumeAccumulator *= freightByVolumeAccumulator;
-
-
-        if(orderQuantityAccumulator >= orderWeightAccumulator && orderQuantityAccumulator >= orderVolumeAccumulator) {
-            System.debug(orderQuantityAccumulator);
-        }                            
-        
-        else if(orderWeightAccumulator >= orderQuantityAccumulator && orderWeightAccumulator >= orderVolumeAccumulator) {
-            System.debug(orderWeightAccumulator);
-        } 
-        
-        else {
-            System.debug(orderVolumeAccumulator);
-        }
+        }        
     }
 
     public static void cepComparation(String Cep, String City, String freightName, 
