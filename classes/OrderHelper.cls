@@ -39,15 +39,15 @@ public with sharing class OrderHelper {
                             freightByVolumeAccumulator = freight.FreightByVolume__c;
 
                             if(freightBaseAccumulator >= freightByWeightAccumulator && freightBaseAccumulator >= freightByVolumeAccumulator) {
-                                System.debug(freightBaseAccumulator);
+                                order.totalFreight__c = freightBaseAccumulator;
                             }                            
                             
                             else if(freightByWeightAccumulator >= freightBaseAccumulator && freightByWeightAccumulator >= freightByVolumeAccumulator) {
-                                System.debug(freightByWeightAccumulator);
+                                order.totalFreight__c = freightByWeightAccumulator;
                             } 
                             
                             else {
-                                System.debug(freightByVolumeAccumulator);
+                                order.totalFreight__c = freightByVolumeAccumulator;
                             }
                         }
                     }
