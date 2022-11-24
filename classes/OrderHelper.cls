@@ -1,85 +1,79 @@
 public with sharing class OrderHelper {
     public OrderHelper() {}
 
-    public static void totalFreight(List<Order> orderList) {
-        Decimal orderQuantityAccumulator = 0;
-        Decimal orderWeightAccumulator = 0;
-        Decimal orderVolumeAccumulator = 0;
+    public static void calcFreight(List<Order> orderList) {
+        Set<String> orderIds = new Set<String>();
+        Set<String> accountIds = new Set<String>();
 
-        Decimal freightBaseAccumulator = 0;
-        Decimal freightByWeightAccumulator = 0;
-        Decimal freightByVolumeAccumulator = 0;
-
-        Map<Id, Freight__c> freightMap = new map <Id, Freight__c> ([
-            SELECT Id, FreightByWeight__c, FreightByVolume__c, FreightBase__c, CEP__c, Name, City__c, State__c
-            FROM Freight__c
-        ]);
-
-        Map<Id, OrderItem> orderItemMap = new map <Id, OrderItem> ([
-            SELECT Id, Quantity,Volume__c,Weight__c, OrderId
-            FROM OrderItem
-        ]);
-        
-        for(Order order : orderList) {            
-            for(Freight__c freight : freightMap.values()) {
-                order.Freight__c = cepComparation(freight.CEP__c, freight.City__c, freight.Id, 
-                order.Freight__c, freight.State__c, order.DistributionCenter__c);
-
-                for(OrderItem orderItem : orderItemMap.values()) {
-                    orderQuantityAccumulator += orderItem.Quantity;
-                    freightBaseAccumulator = orderQuantityAccumulator * freight.FreightBase__c;
-
-                    orderWeightAccumulator += orderItem.Weight__c;
-                    freightByWeightAccumulator = orderWeightAccumulator * freight.FreightByWeight__c;
-                    
-                    orderVolumeAccumulator += orderItem.Volume__c;
-                    freightByVolumeAccumulator = freight.FreightByVolume__c;
-
-                    if(freightBaseAccumulator >= freightByWeightAccumulator && freightBaseAccumulator >= freightByVolumeAccumulator) {
-                        order.totalFreight__c = freightBaseAccumulator;
-                    }                            
-                    
-                    else if(freightByWeightAccumulator >= freightBaseAccumulator && freightByWeightAccumulator >= freightByVolumeAccumulator) {
-                        order.totalFreight__c = freightByWeightAccumulator;
-                    } 
-                    
-                    else {
-                        order.totalFreight__c = freightByVolumeAccumulator;
-                    }
-                }
-            }
+        for (Order order : orderList) {
+            accountIds.add(order.AccountId);
+            orderIds.add(order.Id);
         }
-    }
 
-    public static Id cepComparation(String Cep, String City, String freightId, 
-        String Freight, String freightState, String orderDistributionCenter) {
+        System.debug('orderIds: ' +orderIds);
+        System.debug('accountIds: ' +accountIds);
 
-        Map<Id, Account> accountMap = new Map<Id, Account>([
-            SELECT City__c, CEP__c, Code__c
+        Map<Id, Account> accountMap = new Map<Id, Account> ([
+            SELECT Id, CEP__c, City__c
             FROM Account
-        ]);
+            WHERE Id = :accountIds
+        ]);       
+
+        Set<String> postalCodes = new Set<String>();
+        Set<String> cityIds = new Set<String>();
+        Set<String> stateIds = new Set<String>();
         
-        Map <Id, DistributionCenter__c> distCenterMap = new Map<Id, DistributionCenter__c> ([
-            SELECT State__c
+        for (Account account : accountMap.values()) {
+            System.debug(accountMap);
+            postalCodes.add(account.CEP__c);
+            cityIds.add(account.City__c);
+        }
+
+        Map<Id, Freight__c> freightMap = new Map<Id, Freight__c> ([
+            SELECT  Id, Name, CEP__c, City__c, State__c, DistributionCenter__c,
+                    FreightByVolume__c, FreightByWeight__c, FreightBase__c
+            FROM Freight__c
+            WHERE CEP__c IN :postalCodes
+            OR City__c IN :cityIds
+        ]);
+
+        Set<String> freightCityIds = new Set<String>();
+        Set<String> freightIds = new Set<String>();
+        String freightSetValue;
+        String distributionCenterSetValue;    
+        Map<Id, DistributionCenter__c> distributionCenterMap = new Map<Id, DistributionCenter__c> ([
+            SELECT Id, State__c
             FROM DistributionCenter__c
         ]);
 
-        for(Account account : accountMap.values()) {
-            for(DistributionCenter__c distributionCenter : distCenterMap.values()){
-                if(account.CEP__c != null && CEP == account.CEP__c) {
-                    return freightId;
-                } 
-                else if(account.City__c != null && account.City__c == City) {
-                    return freightId;
-                } 
-                else if(!String.isBlank(orderDistributionCenter)) {
-                    if(distributionCenter.State__c != null && distributionCenter.State__c == freightState) {
-                        return freightId;
-                    }
-                }
-                
+        Set<String> distribuitionCenterStatesId  = new Set<String>();        
+        
+        for (DistributionCenter__c distributionCenter : distributionCenterMap.values()) {
+            distribuitionCenterStatesId.add(distributionCenter.State__c);
+            System.debug(distribuitionCenterStatesId); 
+        }
+        
+        System.debug('oi');
+        for (Freight__c freight : freightMap.values()) {
+            System.debug(distribuitionCenterStatesId + ' ' + freight.State__c);
+            if (postalCodes.contains(freight.CEP__c)) {
+                freightSetValue = freight.id;
+                System.debug(freight.Name + ' '+ freight.CEP__c);
             }
-        } 
-        return Freight;
+
+            else if (cityIds.contains(freight.City__c)) {
+                freightSetValue = freight.id;
+                System.debug(freight.Name + ' '+ cityIds);
+            }
+            else if (distribuitionCenterStatesId.contains(freight.State__c)) {
+                freightSetValue = freight.id;
+                System.debug(freight.Name + ' '+ freight.State__c);
+            }
+        }
+
+        for (Order order : orderList) {
+            order.Freight__c = freightSetValue;
+            System.debug(order.Freight__c);
+        }
     }
 }
